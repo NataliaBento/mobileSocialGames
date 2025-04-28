@@ -65,6 +65,17 @@ router.get("/", protectRoute, async (req, res) => {
     }
 })
 
+// pegando os jogos recomendados pelo usuário logado
+router.get("/user", protectRoute, async (req, res) => {
+    try{
+        const games = await Game.find({ user: req.user._id}).sort({createdAt: -1});
+        res.json(games);
+    }catch (error) {
+        console.error("Get user games error:", error.message);
+        res.status(500).json({message: "Server error"});
+    }
+})
+
 router.delete("/:id", protectRoute, async (req, res) => {
     try{
         const game = await Game.findById(req.params.id)

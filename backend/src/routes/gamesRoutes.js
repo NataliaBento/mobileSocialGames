@@ -64,4 +64,31 @@ router.get("/", protectRoute, async (req, res) => {
         res.status(500).json({message: "Internal server error"});
     }
 })
+
+router.delete("/:id", protectRoute, async (req, res) => {
+    try{
+        const game = await Game.findById(req.params.id)
+        if(!game) return res.status(404).json({message: "Jogo não encontado"});
+
+        // verificando se usuário é o criador do game
+        if(game.user.toString() !== req.user._id.toString()) return res.status(401).json({message: "Não autorizado"})
+
+        //deletando imagem do cloudinary
+        if(game.image && game.image.includes("cloudinary")) {
+            try{
+                const publicId = game.image.split("/").pop().split(".")[0];
+                await cloudinary.uploader.destroy(publicId);
+            }catch (deleteError) {
+                console.log("Error deleting image from cloudinary", deleteError);
+            }
+        }
+
+        await game.deleteOne();
+
+        res.json({message: "Jogo deletado com sucesso"});
+    }catch (error) {
+        console.log("Erro em deletar jogo", error);
+        res.status(500).json({message: "Internal server error"})
+    }
+})
 export default router;

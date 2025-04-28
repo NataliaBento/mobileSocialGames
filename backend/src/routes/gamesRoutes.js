@@ -6,7 +6,7 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", protectRoute, async(req, res) =>{
+router.post("/", protectRoute, async(req, res) => {
     try {
         const { title, caption, rating, image} = req.body;
 
@@ -36,6 +36,32 @@ router.post("/", protectRoute, async(req, res) =>{
     }catch (error) {
         console.log("Erro ao criar o jogo", error);
         res.status(500).json({message: error.message});
+    }
+}); 
+
+router.get("/", protectRoute, async (req, res) => {
+    try {
+        const page = req.query.page || 1;
+        const limit = req.query.limit || 5;
+        const skip = (page -1) * limit;
+        
+        const games = await Game.find()
+        .sort({createdAt: -1}) //desc
+        .skip(skip)
+        .limit(limit)
+        .populate("user", "username profileImage");
+
+        const totalGames = await Game.countDocuments();
+
+        res.send({
+            games, 
+            currentPage: page,
+            totalGames,
+            totalGamePages: Math.ceil(totalGames / limit)
+        })
+    }catch (error) {
+        console.log("Error in get all games routes", error);
+        res.status(500).json({message: "Internal server error"});
     }
 })
 export default router;
